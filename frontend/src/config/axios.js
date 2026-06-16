@@ -2,30 +2,18 @@ import axios from 'axios';
 
 const axiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
-  withCredentials: false, // 🚀 Keep false so Vercel and Render don't block each other
+  withCredentials: true, // required if you use cookies
 });
 
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`; // 🔐 Matches split(' ')[1]
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
   (error) => Promise.reject(error)
-);
-
-// Gracefully handles an expired or deleted token session
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login'; 
-    }
-    return Promise.reject(error);
-  }
 );
 
 export default axiosInstance;
