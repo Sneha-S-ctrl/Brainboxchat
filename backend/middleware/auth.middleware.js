@@ -4,11 +4,11 @@ import redisClient from '../services/redis.service.js';
 export const authUser = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
-        const tokenFromHeader = authHeader?.split(' ')[1];
-        const tokenFromCookie = req.cookies?.token;
-        const token = tokenFromHeader || tokenFromCookie;
-
-        console.log("🔐 Received Token:", token); // 🪵 Debug log
+        
+        // 🚀 Extract token directly from header safely
+        const token = authHeader && authHeader.startsWith('Bearer ') 
+            ? authHeader.split(' ')[1] 
+            : null;
 
         if (!token) {
             return res.status(401).send({ error: 'Unauthorized User - Token Missing' });
@@ -17,7 +17,6 @@ export const authUser = async (req, res, next) => {
         const isBlackListed = await redisClient.get(token);
 
         if (isBlackListed) {
-            res.cookie('token', '');
             return res.status(401).send({ error: 'Unauthorized User - Blacklisted Token' });
         }
 
@@ -25,7 +24,7 @@ export const authUser = async (req, res, next) => {
         req.user = decoded;
         next();
     } catch (error) {
-        console.log("🔐 Token verification error:", error);
+        console.log("🔐 Token verification error:", error.message);
         res.status(401).send({ error: 'Unauthorized User - Invalid Token' });
     }
 }
